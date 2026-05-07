@@ -1,40 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-function validatePhone(phone: string) {
-    return /^\+[1-9]\d{7,14}$/.test(phone);
-}
+export function proxy(request: NextRequest) {
+    const ua = request.headers.get('user-agent') || '';
 
-export async function proxy(req: NextRequest) {
-    const { pathname } = req.nextUrl;
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
 
-    const raw = pathname.replace('/go/', '');
-    const phone = decodeURIComponent(raw);
+    // ВСТАВЬ СВОИ ССЫЛКИ
+    const ANDROID_URL = 'https://redirect.appmetrica.yandex.com/serve/462176418311233799';
+    const IOS_URL = 'https://redirect.appmetrica.yandex.com/serve/462176418311233799';
+    const DESKTOP_URL = 'https://redirect.appmetrica.yandex.com/serve/462176418311233799';
 
-    if (!validatePhone(phone)) {
-        return new NextResponse('Invalid phone number', { status: 400 });
+    if (isAndroid) {
+        return NextResponse.redirect(ANDROID_URL);
     }
 
-    const res = await fetch(
-        `http://213.230.65.139:8080/go/${encodeURIComponent(phone)}`,
-        {
-            method: 'GET',
-            redirect: 'manual',
-        }
-    );
-
-    const location = res.headers.get('location');
-
-    console.log("location", location);
-
-    if (!location) {
-        console.log("failed going to fallback");
-        return NextResponse.redirect('https://app.yoldosh.uz');
+    if (isIOS) {
+        return NextResponse.redirect(IOS_URL);
     }
 
-    console.log("success going to location");
-    return NextResponse.redirect(location);
+    // ПК / Mac → сюда
+    return NextResponse.redirect(DESKTOP_URL);
 }
 
 export const config = {
-    matcher: ['/go/:path*'],
+    matcher: '/',
 };
